@@ -1,0 +1,324 @@
+{
+  "info": {
+    "name": "Taller 13 - Banco de Preguntas (Docker Compose)",
+    "description": "Ejecutar con 'docker compose up -d --build'. Orden: 0 al 10 (Runner o uno por uno).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "0 Salud del Validation Service",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{validation}}/health"
+        },
+        "description": ""
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+              "pm.test(\"UP\", () => pm.expect(pm.response.json().status).to.eql(\"UP\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "1 Listar preguntas (disponibilidad)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{question}}/api/preguntas"
+        },
+        "description": ""
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+              "pm.test(\"es una lista\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2 Crear pregunta válida -> 201",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{question}}/api/preguntas"
+        },
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"enunciado\": \"¿Cuál es la capital de Colombia?\",\n  \"justificacion\": \"Bogotá es la capital y sede del gobierno nacional.\",\n  \"opciones\": [\n    {\"texto\": \"Medellín\", \"correcta\": false},\n    {\"texto\": \"Bogotá\", \"correcta\": true},\n    {\"texto\": \"Cali\", \"correcta\": false},\n    {\"texto\": \"Popayán\", \"correcta\": false}\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"201 Created\", () => pm.response.to.have.status(201));",
+              "const j = pm.response.json();",
+              "pm.test(\"estado BORRADOR con 4 opciones\", () => { pm.expect(j.estado).to.eql(\"BORRADOR\"); pm.expect(j.opciones.length).to.eql(4); });",
+              "pm.collectionVariables.set(\"preguntaId\", j.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3 Crear con justificación corta -> 400",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{question}}/api/preguntas"
+        },
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"enunciado\": \"¿Cuál es la capital de Colombia?\",\n  \"justificacion\": \"corta\",\n  \"opciones\": [\n    {\"texto\": \"Medellín\", \"correcta\": false},\n    {\"texto\": \"Bogotá\", \"correcta\": true},\n    {\"texto\": \"Cali\", \"correcta\": false},\n    {\"texto\": \"Popayán\", \"correcta\": false}\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"400 Bad Request\", () => pm.response.to.have.status(400));",
+              "pm.test(\"trae mensaje de error\", () => pm.expect(pm.response.json().error).to.be.a(\"string\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4 Crear con expresión prohibida -> 400 (rechaza Validation Service)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{question}}/api/preguntas"
+        },
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"enunciado\": \"¿Cuál es la capital de Colombia?\",\n  \"justificacion\": \"Es evidentemente la ciudad correcta del país.\",\n  \"opciones\": [\n    {\"texto\": \"Medellín\", \"correcta\": false},\n    {\"texto\": \"Bogotá\", \"correcta\": true},\n    {\"texto\": \"Cali\", \"correcta\": false},\n    {\"texto\": \"Popayán\", \"correcta\": false}\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"400 Bad Request\", () => pm.response.to.have.status(400));",
+              "pm.test(\"menciona la expresión prohibida\", () => pm.expect(pm.response.json().error).to.include(\"evidentemente\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5 Consultar la pregunta creada",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{question}}/api/preguntas/{{preguntaId}}"
+        },
+        "description": ""
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+              "pm.test(\"mismo id\", () => pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get(\"preguntaId\")));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "6 Enviar a revisión (AMQP) -> 202",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{question}}/api/preguntas/{{preguntaId}}/enviar-revision"
+        },
+        "description": ""
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"202 Accepted\", () => pm.response.to.have.status(202));",
+              "const j = pm.response.json();",
+              "pm.test(\"operationId y status ACCEPTED\", () => { pm.expect(j.operationId).to.be.a(\"string\"); pm.expect(j.status).to.eql(\"ACCEPTED\"); });",
+              "pm.test(\"pregunta PENDIENTE_REVISION\", () => pm.expect(j.pregunta.estado).to.eql(\"PENDIENTE_REVISION\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "7 Lifecycle recibió el evento",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{lifecycle}}/lifecycle/eventos"
+        },
+        "description": "Ejecutar unos segundos después del paso 6."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+              "pm.test(\"el evento de la pregunta fue consumido\", () => pm.expect(pm.response.json().some(e => e.preguntaId === pm.collectionVariables.get(\"preguntaId\"))).to.be.true);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "8 Reenviar a revisión -> 400 (invariante de estado)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{question}}/api/preguntas/{{preguntaId}}/enviar-revision"
+        },
+        "description": ""
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"400 Bad Request\", () => pm.response.to.have.status(400));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "9 Aprobar la pregunta -> 200",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{question}}/api/preguntas/{{preguntaId}}/aprobar"
+        },
+        "description": ""
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+              "pm.test(\"APROBADA\", () => pm.expect(pm.response.json().estado).to.eql(\"APROBADA\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 Pregunta inexistente -> 404",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{question}}/api/preguntas/00000000-0000-0000-0000-000000000000"
+        },
+        "description": ""
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"404 Not Found\", () => pm.response.to.have.status(404));"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "validation",
+      "value": "http://localhost:8082"
+    },
+    {
+      "key": "question",
+      "value": "http://localhost:8083"
+    },
+    {
+      "key": "lifecycle",
+      "value": "http://localhost:8084"
+    },
+    {
+      "key": "preguntaId",
+      "value": ""
+    }
+  ]
+}

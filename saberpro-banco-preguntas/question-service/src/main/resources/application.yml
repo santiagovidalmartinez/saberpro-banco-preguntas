@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: question-service
+  datasource:
+    url: jdbc:h2:mem:questiondb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: 5672
+    username: guest
+    password: guest
+
+server:
+  port: 8083
+
+saberpro:
+  # Adaptador de persistencia activo: jpa (por defecto) | memory
+  persistence: jpa
+  messaging:
+    enabled: true
+  validation:
+    enabled: true
+    url: ${VALIDATION_SERVICE_URL:http://localhost:8082}

@@ -1,0 +1,3 @@
+# Perfil "memory": InMemoryQuestionAdapter (HashMap) en lugar de JpaQuestionAdapter.
+saberpro:
+  persistence: memory

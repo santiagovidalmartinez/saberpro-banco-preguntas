@@ -1,0 +1,10 @@
+# Perfil "docker": PostgreSQL del docker-compose. Los datos persisten en el volumen pgdata.
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/saberpro}
+    driver-class-name: org.postgresql.Driver
+    username: ${SPRING_DATASOURCE_USERNAME:saberpro}
+    password: ${SPRING_DATASOURCE_PASSWORD:saberpro}
+  jpa:
+    hibernate:
+      ddl-auto: update
